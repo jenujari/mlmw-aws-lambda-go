@@ -1,0 +1,20 @@
+https://docs.aws.amazon.com/lambda/latest/dg/go-image.html
+
+https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html
+
+https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-images.html#configuration-images-create
+
+12345678910.dkr.ecr.ap-south-1.amazonaws.com/mlmw-rsi-obv:latest
+
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 12345678910.dkr.ecr.ap-south-1.amazonaws.com   
+docker build -t aws-go-lambda-mlmw-rsi-obv:latest .
+docker tag  aws-go-lambda-mlmw-rsi-obv:latest 12345678910.dkr.ecr.ap-south-1.amazonaws.com/mlmw-rsi-obv:latest
+docker push 12345678910.dkr.ecr.ap-south-1.amazonaws.com/mlmw-rsi-obv:latest       
+
+
+docker run -d  -p 9000:8080 --name rsi-obv aws-go-lambda-mlmw-rsi-obv:local  
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
+
+12345678910.dkr.ecr.ap-south-1.amazonaws.com/mlmw-rsi-obv
+
+
