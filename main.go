@@ -56,11 +56,11 @@ type BuyTicker struct {
 
 type DataFrame []BuyTicker
 
-type VolumeSorter []BuyTicker
+type StrengthSorter []BuyTicker
 
-func (a VolumeSorter) Len() int           { return len(a) }
-func (a VolumeSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a VolumeSorter) Less(i, j int) bool { return a[i].Volume > a[j].Volume }
+func (a StrengthSorter) Len() int           { return len(a) }
+func (a StrengthSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a StrengthSorter) Less(i, j int) bool { return a[i].RsiObv > a[j].RsiObv }
 
 var allQuotesWG sync.WaitGroup
 var quotesWG sync.WaitGroup
@@ -97,7 +97,7 @@ func HandleLambdaEvent(_ context.Context, _ json.RawMessage) error {
 	allQuotesWG.Wait()
 	quoteWG.Wait()
 
-	sort.Sort(VolumeSorter(df))
+	sort.Sort(StrengthSorter(df))
 
 	var message strings.Builder
 	message.WriteString("<b>Result for " + time.Now().Format(DATE_FORMAT) + "</b>")
@@ -260,7 +260,7 @@ func buyCondition(q *FullQuote, d int) bool {
 	// 	return true
 	// }
 
-	if q.RsiObv[d] >= 63 && q.RsiObv[d] < 75 {
+	if q.RsiObv[d] >= 63 && q.RsiObv[d] < 95 {
 		return true
 	}
 
