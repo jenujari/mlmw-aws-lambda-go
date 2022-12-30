@@ -103,7 +103,7 @@ func HandleLambdaEvent(_ context.Context, _ json.RawMessage) error {
 	sort.Sort(StrengthSorter(df))
 
 	var message strings.Builder
-	message.WriteString("<b>Small cap filter for " + time.Now().Format(DATE_FORMAT) + "</b>")
+	message.WriteString("<b>Mid cap filter for " + time.Now().Format(DATE_FORMAT) + "</b>")
 	message.WriteString("<pre>\n")
 	message.WriteString(generateTeleGramText())
 	message.WriteString("</pre>")
