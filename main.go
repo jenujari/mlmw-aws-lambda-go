@@ -24,18 +24,10 @@ import (
 	"github.com/samber/lo"
 )
 
-const (
-	URLTOVISIT  = ""
-	DATE_FORMAT = "2006-01-02"
-	BOT_ID      = ""
-	MY_ID       = ""
-	TCHANNEL_ID = ""
-	CHUNKS      = 30
-)
-
 type Ticker struct {
 	Name       string
 	TickerName string
+	volume     uint64
 }
 
 type FullQuote struct {
@@ -62,6 +54,12 @@ func (a StrengthSorter) Len() int           { return len(a) }
 func (a StrengthSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a StrengthSorter) Less(i, j int) bool { return a[i].RsiObv > a[j].RsiObv }
 
+type VolumeSorter []*Ticker
+
+func (a VolumeSorter) Len() int           { return len(a) }
+func (a VolumeSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a VolumeSorter) Less(i, j int) bool { return a[i].volume > a[j].volume }
+
 var allQuotesWG sync.WaitGroup
 var quotesWG sync.WaitGroup
 var quoteWG sync.WaitGroup
@@ -85,6 +83,11 @@ func HandleLambdaEvent(_ context.Context, _ json.RawMessage) error {
 	tickers := <-tickerList
 
 	fmt.Println("Chartink gave " + strconv.Itoa(len(tickers)) + " no of symbols to check.")
+	sort.Sort(VolumeSorter(tickers))
+
+	if len(tickers) > 400 {
+		tickers = tickers[0:400]
+	}
 
 	onlySymbols := lo.Map(tickers, func(s *Ticker, i int) string {
 		return s.TickerName + "." + "NS"
@@ -100,7 +103,7 @@ func HandleLambdaEvent(_ context.Context, _ json.RawMessage) error {
 	sort.Sort(StrengthSorter(df))
 
 	var message strings.Builder
-	message.WriteString("<b>Result for " + time.Now().Format(DATE_FORMAT) + "</b>")
+	message.WriteString("<b>Small cap filter for " + time.Now().Format(DATE_FORMAT) + "</b>")
 	message.WriteString("<pre>\n")
 	message.WriteString(generateTeleGramText())
 	message.WriteString("</pre>")
@@ -252,19 +255,7 @@ func processQuoteAndUpdateDf(q quote.Quote, upto int) {
 // }
 
 func buyCondition(q *FullQuote, d int) bool {
-	// y, y1, y2 := d-1, d-2, d-3
-
-	// if q.RsiObv[y1] >= 65 && q.RsiObv[y2] < 65 &&
-	// 	q.RsiObv[d] > ((q.RsiObv[y]+q.RsiObv[y1]+q.RsiObv[y2])/3) &&
-	// 	q.RsiObv[y] > ((q.RsiObv[y1]+q.RsiObv[y2])/2) {
-	// 	return true
-	// }
-
-	if q.RsiObv[d] >= 63 && q.RsiObv[d] < 95 {
-		return true
-	}
-
-	return false
+	return q.RsiObv[d] >= 62
 }
 
 func TruncateFloat(x float64) float64 {
@@ -301,6 +292,9 @@ func formatStockList(clipStr <-chan string) <-chan []*Ticker {
 				}
 				if head == "Symbol" {
 					ticker.TickerName = rwCols[i]
+				}
+				if head == "Volume" {
+					ticker.volume, _ = strconv.ParseUint(strings.ReplaceAll(rwCols[i], ",", ""), 10, 64)
 				}
 			}
 			tickerList = append(tickerList, ticker)

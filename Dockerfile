@@ -6,6 +6,7 @@ RUN go env -w GOPROXY=direct
 ADD go.mod ./
 ADD go.sum ./
 ADD main.go ./
+ADD constants.go ./
 RUN go mod download
 RUN go build -o /main
 # copy artifacts to a clean image
